@@ -1,0 +1,17 @@
+- !policy
+  id: jenkins
+  body:
+  - !layer
+  - !host
+  - !grant
+    role: !layer
+    member: !host
+
+- !policy
+  id: ansible
+  body:
+  - !layer
+  - !host
+  - !grant
+    role: !layer
+    member: !host

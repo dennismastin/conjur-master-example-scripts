@@ -1,0 +1,3 @@
+docker exec dap evoke ca import --root /root/fullchain.pem
+  docker exec dap evoke ca import --key /root/privkey.pem --set /root/cert.pem
+

@@ -1,0 +1,58 @@
+---
+- !user mike
+
+- !user john
+
+- !user paul
+
+- !user eva
+
+- !host policy_updater
+
+- !group admins
+
+- !group devops
+
+- !grant
+  role: !group admins
+  members:
+   - !user mike
+   - !user eva
+
+- !grant
+  role: !group devops
+  members:
+   - !user john
+   - !user paul
+   - !host policy_updater
+   - !group admins
+
+- !permit
+  role: !group admins
+  privileges:
+   - read
+   - update
+   - create
+  resources:
+   - !policy root
+
+- !permit
+  role: !host policy_updater
+  privileges:
+   - read
+   - update
+   - create
+  resources:
+   - !policy root
+
+- !policy
+  id: conjur
+  owner: !group /devops
+
+- !policy
+  id: cicd
+  owner: !group /devops
+
+- !policy
+  id: secrets
+  owner: !group /devops

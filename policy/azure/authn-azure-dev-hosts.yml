@@ -1,0 +1,56 @@
+---
+
+- !policy
+  id: conjur/authn-azure/dev
+  body:
+  - !webservice
+
+  - !variable
+    id: provider-uri
+
+  - !group 
+    id: apps
+    annotations:
+      description: Group of hosts who can authenticate using the authn-azure/dev authenticator
+
+  - !permit 
+    role: !group apps
+    privilege: [ read, authenticate ]
+    resource: !webservice
+  
+- !policy
+  id: azure-apps
+  body:
+    - !group
+
+    - &hosts
+      - !host
+        id: &az-tools
+        annotations:
+          authn-azure/subscription-id: {{ Azure-Subscription-ID-xxxxx }}
+          authn-azure/resource-group: {{ AZ-Resource-Group }}
+    
+    - !grant 
+      role: !group
+      members: *hosts
+
+- !grant  
+  role: !group conjur/authn-azure/dev/apps
+  member: !group azure-apps
+
+- !variable test-variable
+
+- !group 
+  id: consumers
+
+- !permit
+  role: !group consumers
+  privilege: [ read, execute]
+  resource: !variable test-variable
+
+- !grant  
+  role: !group consumers
+  member: !group azure-apps
+
+
+

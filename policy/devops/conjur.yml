@@ -1,0 +1,167 @@
+- !policy
+  id: authn-jenkins/prod
+  body:
+  - !webservice
+  - !group clients
+  
+  # these will be used to connect to the jenkins server and see if a specific job is running
+  - !variable jenkinsURL
+  - !variable jenkinsUsername
+  - !variable jenkinsPassword
+  - !variable jenkinsCertificate
+
+  # create a group that can authenticate to this jenkins instance
+  - !permit
+    role: !group clients
+    privilege: [ read, authenticate ]
+    resource: !webservice
+
+- !policy
+  id: authn-k8s/k8s-follower
+  body:
+  - !webservice
+  
+  - !variable ca/key
+  
+  - !variable ca/cert
+
+  - !policy
+    id: apps
+    body:
+    - !layer
+
+    - &authenticated-resources-k8s
+      - !host
+        id: dap/service_account/conjur-cluster
+        annotations:
+          kubernetes/authentication-container-name: authenticator
+          kubernetes: "true"
+
+      - !host
+        id: demoapps/deployment/jenkins
+        annotations:
+          kubernetes/authentication-container-name: authenticator
+          kubernetes: "true"
+
+      - !host
+        id: demoapps/deployment/python
+        annotations:
+          kubernetes/authentication-container-name: authenticator
+          kubernetes: "true"
+
+      - !host
+        id: demoapps/deployment/secretless
+        annotations:
+          kubernetes/authentication-container-name: secretless-broker
+          kubernetes: "true"
+
+      - !host
+        id: demoapps/deployment/summon
+        annotations:
+          kubernetes/authentication-container-name: authenticator
+          kubernetes: "true"
+
+      - !host
+        id: demoapps/deployment/curl
+        annotations:
+          kubernetes/authentication-container-name: authenticator
+          kubernetes: "true"
+
+      - !host
+        id: demoapps/deployment/k8ssecretdap
+        annotations:
+          kubernetes/authentication-container-name: cyberark-secrets-provider
+          kubernetes: "true"
+
+    - !grant
+      role: !layer
+      members: *authenticated-resources-k8s
+      
+  - !permit
+    resource: !webservice
+    privilege: [ read, authenticate ]
+    role: !layer apps
+
+- !policy
+  id: authn-k8s/okd-follower
+  body:
+  - !webservice
+  
+  - !variable ca/key
+  
+  - !variable ca/cert
+
+  - !policy
+    id: apps
+    body:
+    - !layer
+
+    - &authenticated-resources-okd
+      - !host
+        id: dap/service_account/conjur-cluster
+        annotations:
+          kubernetes/authentication-container-name: authenticator
+          openshift: "true"
+          
+      - !host
+        id: demoapps/deployment/jenkins
+        annotations:
+          kubernetes/authentication-container-name: authenticator
+          openshift: "true"
+
+      - !host
+        id: demoapps/deployment/secretless
+        annotations:
+          kubernetes/authentication-container-name: secretless-broker
+          openshift: "true"
+
+      - !host
+        id: demoapps/deployment/summon
+        annotations:
+          kubernetes/authentication-container-name: authenticator
+          openshift: "true"
+
+      - !host
+        id: demoapps/deployment/pyton
+        annotations:
+          kubernetes/authentication-container-name: authenticator
+          openshift: "true"
+
+      - !host
+        id: demoapps/deployment/curl
+        annotations:
+          kubernetes/authentication-container-name: authenticator
+          openshift: "true"
+
+      - !host
+        id: demoapps/deployment/k8ssecretdap
+        annotations:
+          kubernetes/authentication-container-name: cyberark-secrets-provider
+          openshift: "true"
+
+    - !grant
+      role: !layer
+      members: *authenticated-resources-okd
+      
+  - !permit
+    resource: !webservice
+    privilege: [ read, authenticate ]
+    role: !layer apps
+
+- !policy
+  id: seed-generation
+  body:
+  - !webservice
+  - !layer consumers
+  - !permit
+    role: !layer consumers
+    privilege: [ "execute" ]
+    resource: !webservice
+
+- !grant
+  role: !layer seed-generation/consumers
+  member: !host /conjur/authn-k8s/k8s-follower/apps/dap/service_account/conjur-cluster
+
+- !grant
+  role: !layer seed-generation/consumers
+  member: !host /conjur/authn-k8s/okd-follower/apps/dap/service_account/conjur-cluster

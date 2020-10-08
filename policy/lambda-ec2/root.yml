@@ -1,0 +1,40 @@
+# policy id needs to match the convention `conjur/authn-iam/<service ID>`
+- !policy
+  id: conjur/authn-iam/prod
+  body:
+  - !webservice
+  - !group apps 
+  - !permit
+    role: !group apps
+    privilege: [ read, authenticate ]
+    resource: !webservice
+
+- &variables
+  - !variable database/username
+  - !variable database/password
+
+# Lambda Role
+- !host {{ AWS-account-number-xxxxxx }}/ussewest-lambda-full
+
+# EC2 Role
+- !host {{ AWS-account-number-xxxxxx }}/ussewest_trusted_with_conjur_secret
+
+- !permit
+  role: !host {{ AWS-account-number-xxxxxx }}/ussewest-lambda-full
+  privilege: [ read, execute ]
+  resource: *variables
+
+- !permit
+  role: !host {{ AWS-account-number-xxxxxx }}/ussewest_trusted_with_conjur_secret
+  privilege: [ read, execute ]
+  resource: *variables
+
+- !grant 
+  role: !group conjur/authn-iam/prod/apps
+  member: !host {{ AWS-account-number-xxxxxx }}/ussewest-lambda-full
+
+- !grant 
+  role: !group conjur/authn-iam/prod/apps
+  member: !host {{ AWS-account-number-xxxxxx }}/ussewest_trusted_with_conjur_secret
+
+
